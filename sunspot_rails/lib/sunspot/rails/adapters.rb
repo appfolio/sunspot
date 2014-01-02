@@ -1,16 +1,16 @@
 module Sunspot #:nodoc:
   module Rails #:nodoc:
-    # 
+    #
     # This module provides Sunspot Adapter implementations for ActiveRecord
     # models.
     #
     module Adapters
       class ActiveRecordInstanceAdapter < Sunspot::Adapters::InstanceAdapter
-        # 
+        #
         # Return the primary key for the adapted instance
         #
         # ==== Returns
-        # 
+        #
         # Integer:: Database ID of model
         #
         def id
@@ -20,7 +20,13 @@ module Sunspot #:nodoc:
 
       class ActiveRecordDataAccessor < Sunspot::Adapters::DataAccessor
         # options for the find
-        attr_accessor :include, :select
+        attr_accessor :include
+        attr_reader :select
+
+        def initialize(clazz)
+          super(clazz)
+          @inherited_attributes = [:include, :select]
+        end
 
         #
         # Set the fields to select from the database. This will be passed
@@ -34,8 +40,8 @@ module Sunspot #:nodoc:
           value = value.join(', ') if value.respond_to?(:join)
           @select = value
         end
-        
-        # 
+
+        #
         # Get one ActiveRecord instance out of the database by ID
         #
         # ==== Parameters
@@ -45,14 +51,12 @@ module Sunspot #:nodoc:
         # ==== Returns
         #
         # ActiveRecord::Base:: ActiveRecord model
-        # 
+        #
         def load(id)
-          @clazz.first(options_for_find.merge(
-            :conditions => { @clazz.primary_key => id}
-          ))
+          @clazz.where(@clazz.primary_key => id).merge(scope_for_load).first
         end
 
-        # 
+        #
         # Get a collection of ActiveRecord instances out of the database by ID
         #
         # ==== Parameters
@@ -64,18 +68,21 @@ module Sunspot #:nodoc:
         # Array:: Collection of ActiveRecord models
         #
         def load_all(ids)
-          @clazz.all(options_for_find.merge(
-            :conditions => { @clazz.primary_key => ids.map { |id| id }}
-          ))
+          @clazz.where(@clazz.primary_key => ids).merge(scope_for_load)
         end
-        
+
         private
-        
-        def options_for_find
-          options = {}
-          options[:include] = @include unless @include.blank?
-          options[:select]  =  @select unless  @select.blank?
-          options
+
+        def scope_for_load
+          scope = relation
+          scope = scope.includes(@include) if @include.present?
+          scope = scope.select(@select)    if @select.present?
+          scope
+        end
+
+        # COMPATIBILITY: Rails 4 has deprecated the 'scoped' method in favour of 'all'
+        def relation
+          ::Rails.version >= '4' ? @clazz.all : @clazz.scoped
         end
       end
     end

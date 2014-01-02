@@ -6,7 +6,7 @@ namespace :sunspot do
   # By default the indexing system works in batches of 50 records, you can \
   # set your own value for this by using the batch_size argument. You can \
   # also optionally define a list of models to separated by a forward slash '/'
-  # 
+  #
   # $ rake sunspot:reindex                # reindex all models
   # $ rake sunspot:reindex[1000]          # reindex in batches of 1000
   # $ rake sunspot:reindex[false]         # reindex without batching
@@ -21,11 +21,11 @@ namespace :sunspot do
 
     # Set up general options for reindexing
     reindex_options = { :batch_commit => false }
-    
+
     case args[:batch_size]
     when 'false'
       reindex_options[:batch_size] = nil
-    when /^\d+$/ 
+    when /^\d+$/
       reindex_options[:batch_size] = args[:batch_size].to_i if args[:batch_size].to_i > 0
     end
 
@@ -41,7 +41,7 @@ namespace :sunspot do
       model_names = args[:models].split('+')
       sunspot_models = model_names.map{ |m| m.constantize }
     end
-    
+
     # Set up progress_bar to, ah, report progress
     begin
       require 'progress_bar'
